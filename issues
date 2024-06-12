@@ -1,0 +1,6 @@
+The program is not accepting of instances where the users has made charts in other sheets.
+This is problematic since the value of the sheets are the charts.
+
+
+When doing many sheets, the program noticeably slows between each successive sheet... how do
+I speed this up???
