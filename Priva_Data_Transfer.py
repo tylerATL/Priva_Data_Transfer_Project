@@ -147,10 +147,16 @@ def create_dest_filename_by_user(found_user=None, str_suffix=None) -> str:
 
     elif found_user == "GrahamTucker":
 
-        # Grahams filepath
+        # Nicks path
         # "C:\Users\GrahamTucker\Gotham Greens Holdings, LLC\Growing Work Space - CHI2\CLIMATE and IRRIGATION\PRIVA_DATA.xlsx"
         sharepoint_redirect = r"Gotham Greens Holdings, LLC\Growing Work Space - CHI2\CLIMATE and IRRIGATION"
         base_str = f"C:\\Users\\***\\{sharepoint_redirect}\\PRIVA_DATA.xlsx"
+
+    elif found_user == "NickBellizzi":
+
+        sharepoint_redirect = r"Gotham Greens Holdings, LLC\Growing Work Space - YIELDS + CLIMATE"
+        base_str = f"C:\\Users\\***\\{sharepoint_redirect}\\PRIVA_DATA.xlsx"
+
     else:
 
         base_str = f"C:\\Users\\***\\{str_suffix}\\PRIVA_DATA.xlsx"
