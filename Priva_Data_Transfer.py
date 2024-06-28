@@ -120,8 +120,12 @@ def onedrive_or_desktop(func):
 def assign_a_row(df, confirmed_row, interval, designation, user_label) -> None:
     """Perform the assignment of the downloaded data row to the temporary holding dataframe."""
 
-    df.loc[len(df.index)] = ([str(interval)] + [str(designation)] + [str(user_label)] +
-                             split(";", confirmed_row))
+    values_from_the_datafiles = split(";", confirmed_row)
+
+    if type(values_from_the_datafiles[-1]) is not "string":
+
+        df.loc[len(df.index)] = ([str(interval)] + [str(designation)] + [str(user_label)] +
+                                 split(";", confirmed_row))
 
     return
 
@@ -341,7 +345,7 @@ if __name__ == "__main__":
 
     # The interval is taken from the downloaded file name.
     interval_number_regex = compile(r"\d+(?=\.csv)")
-    interval_type_regex = compile(r"week|period|quarter|year]")
+    interval_type_regex = compile(r"week|period|quarter|year")
 
     with ExcelWriter(dest_file_path, mode='a', if_sheet_exists='overlay',
                      engine='openpyxl', engine_kwargs={"data_only": True, "keep_vba": False}) as writer:
@@ -352,7 +356,9 @@ if __name__ == "__main__":
             try:
                 # Only valid file paths will make it out of the generator.
                 data_file_path, file, user_entry = next(possible_files)
-                weekly_file = read_csv(data_file_path, header=0)
+                weekly_file = read_csv(data_file_path, header=0,
+                                       usecols=["label;pcu;type_1;idx_1;type_2;idx_2;startdate;enddate;value"],
+                                       on_bad_lines='warn')
 
             except StopIteration:
                 break
@@ -378,7 +384,7 @@ if __name__ == "__main__":
 
                     new_info_df.reset_index(drop=True)
 
-                # Valid until data rows in the found, downloaded files are exhausted.
+                # Valid until data rows in the found downloaded PRIVA files are exhausted.
                 while True:
 
                     # Must be a string to prevent a TypeError in the wrapper above.
