@@ -6,7 +6,7 @@ from os import path, listdir
 from re import compile, search, split
 from time import sleep
 
-import cython
+
 import numpy as np
 from numpy import nan
 from openpyxl import Workbook
@@ -460,9 +460,9 @@ if __name__ == "__main__":
                                       keep_default_na=True, parse_dates=True, dtype=data_types_by_column)
 
         # possibly https://www.youtube.com/watch?v=lCFEzRaqoJA
-        final_file_as_df.drop_duplicates(keep='last', inplace=True,
-                                         subset=['interval', 'interval_type', 'label',
-                                                 'type_1', 'idx_1', 'startdate', 'value'])
+        # final_file_as_df.drop_duplicates(keep='last', inplace=True,
+        #                                  subset=['interval', 'interval_type', 'label',
+        #                                          'type_1', 'idx_1', 'startdate', 'value'])
 
         # User Console Message
         print(f"Merging {len(final_file_as_df)} new and former rows.")
