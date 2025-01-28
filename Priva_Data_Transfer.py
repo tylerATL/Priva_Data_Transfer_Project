@@ -6,6 +6,7 @@ from os import path, listdir
 from re import compile, search, split
 from time import sleep
 
+import cython
 import numpy as np
 from numpy import nan
 from openpyxl import Workbook
@@ -122,8 +123,9 @@ def assign_a_row(df, confirmed_row, interval, designation, user_label) -> None:
 
     values_from_the_datafiles = split(";", confirmed_row)
 
-    if type(values_from_the_datafiles[-1]) is not "string":
+    if type(values_from_the_datafiles[-1]) != "string":
 
+        # The row will have the 3 user added rows and the priva data columns added from the download.
         df.loc[len(df.index)] = ([str(interval)] + [str(designation)] + [str(user_label)] +
                                  split(";", confirmed_row))
 
@@ -159,6 +161,16 @@ def create_dest_filename_by_user(found_user=None, str_suffix=None) -> str:
     elif found_user == "NickBellizzi":
 
         sharepoint_redirect = r"Gotham Greens Holdings, LLC\Growing Work Space - YIELDS + CLIMATE"
+        base_str = f"C:\\Users\\***\\{sharepoint_redirect}\\PRIVA_DATA.xlsx"
+
+    elif found_user == "ErinHickey":
+
+        sharepoint_redirect = r"Gotham Greens Holdings, LLC\Growing Work Space - DEN1\CLIMATE & IRRIGATION"
+        base_str = f"C:\\Users\\***\\{sharepoint_redirect}\\PRIVA_DATA.xlsx"
+
+    elif found_user == "AmandaOlbrickMarabes":
+
+        sharepoint_redirect = r"Gotham Greens Holdings, LLC\Growing Work Space - ATL\CLIMATE & IRRIGATION"
         base_str = f"C:\\Users\\***\\{sharepoint_redirect}\\PRIVA_DATA.xlsx"
 
     else:
@@ -265,6 +277,7 @@ def report_by_week_generator(found_user=None) -> []:
                     data_name_regex = compile(full_path_plus_expression)
                     file_name_string = search(data_name_regex, iterated_file)
 
+                    # The file name must be findable with the REGEX, and it can only be used 1x per run.
                     if file_name_string and Explored_Files.test_list(file_string=file_name_string[0]):
 
                         checked_file_path = data_file_path_with_user.replace('+++', file_name_string[0])
@@ -304,6 +317,28 @@ def new_data_type_prep(df=None, parent_file_name=None):
 
         return DataFrame()
 
+def search_in_excel(file_path, search_column, search_value, chunksize=1000):
+    """Searches for a value in a specific column of an Excel file.
+    Presently, not used.""" 
+
+    result_rows = []
+    chunk_start = 0
+
+    while True:
+        df = read_excel(file_path, nrows=chunksize, skiprows=chunk_start)
+
+        if df.empty:
+            break  # No more rows to read
+
+        matching_rows = df[df[search_column] == search_value]
+
+        if not matching_rows.empty:
+            result_rows.extend(matching_rows.to_dict('records'))
+
+        chunk_start += chunksize
+
+    return result_rows
+
 
 if __name__ == "__main__":
     """The program initializing statement."""
@@ -331,12 +366,12 @@ if __name__ == "__main__":
 
     final_file = ExcelFile(dest_file_path, engine="openpyxl")
     destination_file_initial_read = read_excel(final_file, keep_default_na=False, parse_dates=True,
-                                               sheet_name="Sheet", header=0)
+                                               sheet_name="Sheet", names=['startdate'], header=0)
     bottom_row = len(destination_file_initial_read)
 
     # User Console Message
-    print("The destination file, PRIVA_DATA, is ready and is reused by this program during future data row additions."
-          if bottom_row == 0 else f"File has {bottom_row} prior data rows.")
+    print(f"File has {bottom_row} prior data rows." if bottom_row != 0 else
+          "The destination file, PRIVA_DATA, is ready and is reused by this program during future data row additions.")
     del destination_file_initial_read
     final_file.close()
 
@@ -350,22 +385,26 @@ if __name__ == "__main__":
     with ExcelWriter(dest_file_path, mode='a', if_sheet_exists='overlay',
                      engine='openpyxl', engine_kwargs={"data_only": True, "keep_vba": False}) as writer:
 
+        # assign_vectorized = np.vectorize(assign_a_row)
+
         # Valid until filename combinations are exhausted
         while True:
 
             try:
-                # Only valid file paths will make it out of the generator.
+                # Only valid file paths against those the user downloaded will make it out of the generator.
                 data_file_path, file, user_entry = next(possible_files)
                 weekly_file = read_csv(data_file_path, header=0,
                                        usecols=["label;pcu;type_1;idx_1;type_2;idx_2;startdate;enddate;value"],
                                        on_bad_lines='warn')
+
+                column_header = ["interval"] + ["interval_type"] + ['grower_label'] + split(";", weekly_file.columns[0])
 
             except StopIteration:
                 break
 
             else:
                 # A temporary dataframe to hold the collected data.
-                new_info_df = DataFrame(columns=None)
+                new_info_df = DataFrame(columns=column_header)
 
                 # Week number is not always in Priva data, so it is taken from the filepath.
                 interval_number = search(interval_number_regex, data_file_path)[0]
@@ -373,16 +412,6 @@ if __name__ == "__main__":
 
                 # A generator for all the data rows in the file.
                 row_iterator = weekly_file.itertuples()
-
-                # Add the column labels to the first row in the sheet IF the file is new.
-                if len(new_info_df.values) == 0:
-
-                    column_header = ["interval"] + ["interval_type"] + ['grower_label'] + split(";", weekly_file.columns[0])
-
-                    for name in column_header:
-                        new_info_df[name] = nan
-
-                    new_info_df.reset_index(drop=True)
 
                 # Valid until data rows in the found downloaded PRIVA files are exhausted.
                 while True:

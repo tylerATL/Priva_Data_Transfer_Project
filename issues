@@ -4,3 +4,15 @@ This is problematic since the value of the sheets are the charts.
 
 When doing many sheets, the program noticeably slows between each successive sheet... how do
 I speed this up???
+
+The simple row counting of the sheet before the program runs is VERY heavy. When i have 117024 rows, this process can
+take up to 20 seconds. I don't think a starting row count is worthwhile to end users....
+
+Has an issue within the assign_a_row funtion with the type checking conditional.
+
+
+A video to help with ssh-keygen to github from pycharm
+
+https://www.youtube.com/watch?v=on-MniMwdxM
+
+
